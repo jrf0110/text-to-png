@@ -1,0 +1,153 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <style type="text/css">
+      body, html {
+        margin: 0;
+        padding: 0;
+        background: url('images/body-bg.jpg');
+      }
+      body {
+        font-family: Helvetica, sans-serif;
+        color: #555;
+        line-height: 1.8em;
+      }
+      #foCanvas {
+        display: none;
+      }
+      .text {
+        display: inline-block;
+      }
+      .result {
+        margin: 12px 0 0 12px;
+      }
+    </style>
+    <script type="text/javascript">
+      document.addEventListener('DOMContentLoaded', function(){
+        var
+          kitUrl     = "//use.typekit.net/"
+        , kitId      = document.getElementById('kitId')
+        , fontFamily = document.getElementById('fontFamily')
+        , fontColor  = document.getElementById('fontColor')
+        , fontSize   = document.getElementById('fontSize')
+        , text       = document.getElementById('text')
+        , result     = document.getElementById('result')
+        , foCanvas   = document.getElementById('foCanvas')
+        , foContext  = foCanvas.getContext('2d')
+
+        , font = {}
+
+        , updateFont = function(){
+            font.family = fontFamily.value;
+            font.size   = fontSize.value;
+            font.color  = fontColor.value;
+          }
+
+        , embedKit = function(id){
+            var script = document.createElement('script');
+            script.src = kitUrl + id + ".js";
+            script.onerror = function(e){
+              console.log(e);
+            };
+            script.onload = function(){
+              // ya, this is dumb, but whatever
+              setTimeout(function(){ Typekit.load(); }, 1000);
+            };
+            document.head.appendChild(script);
+          }
+
+        , updateText = function(){
+            text.style.fontFamily = font.family;
+            text.style.fontSize   = font.size;
+            text.style.color      = font.color;
+            console.log(font);
+          }
+        , updateImage = function(){
+            var
+              width = text.offsetWidth
+            , height = text.offsetHeight
+            ;
+            foContext.clearRect(0, 0, foCanvas.width, foCanvas.height);
+            foCanvas.width = width + 20;
+            foCanvas.height = height + 20;
+            foContext.font = font.size + " " + font.family;
+            foContext.fillStyle = font.color;
+            foContext.textBaseline = "top";
+            // printText(foContext, text.innerHTML, 0, 12, 24, width);
+            foContext.fillText(text.innerHTML, 0, 0);
+            result.src = foContext.canvas.toDataURL();
+          }
+        , printText = function(context, text, x, y, lineHeight, fitWidth){
+            fitWidth = fitWidth || 0;
+
+            if (fitWidth <= 0) return context.fillText(text, x, y);
+
+            var
+              words       = text.split(' ')
+            , currentLine = 0
+            , idx         = 1
+            , str
+            , w
+            ;
+            while (words.length > 0 && idx <= words.length){
+              str = words.slice(0, idx).join(' ');
+              w   = context.measureText(str).width;
+
+              if (w > fitWidth){
+                if (idx === 1) idx = 2;
+                context.fillText(words.slice(0, idx - 1).join(' '), x, y + (lineHeight * currentLine));
+                currentLine++;
+                words = words.splice(idx - 1);
+                idx   = 1;
+              } else idx++;
+            }
+            if (idx > 0) context.fillText(words.join(' '), x, y + (lineHeight * currentLine));
+          }
+        ;
+        updateFont();
+
+        kitId.addEventListener('keyup', function(){
+          var id = kitId.value;
+          if (id.length === 7) embedKit(id);
+        });
+        fontFamily.addEventListener('keyup', function(){
+          font.family = fontFamily.value;
+          updateText();
+          updateImage();
+        });
+        fontSize.addEventListener('keyup', function(){
+          font.size = fontSize.value;
+          updateText();
+          updateImage();
+        });
+        fontColor.addEventListener('keyup', function(){
+          font.color = fontColor.value;
+          updateText();
+          updateImage();
+        });
+        text.addEventListener('keyup', function(){
+          updateImage();
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <h1>Text to Png</h1>
+    <h2>First, add our domain to your kit</h2>
+    <h2>Second, enter your kit id below</h2>
+    <input id="kitId" placeholder="kit id" />
+    <h2>Now you're ready to start converting!</h2>
+    <div class="tool">
+      <div class="left">
+        <input class="family" id="fontFamily" value="Helvetica" />
+        <input class="font-size" id="fontSize" value="16px" />
+        <input class="color" id="fontColor" value="#333" />
+        <div class="text" id="text" contenteditable="true">Hello World!</div>
+      </div>
+      <div class="right">
+        <img class="result" id="result" />
+      </div>
+    </div>
+    <canvas id="foCanvas"></canvas>
+  </body>
+</html>
